@@ -4,8 +4,7 @@
 - Projet: API FastAPI de gestion de dresseurs/pokemons/items
 - Version cible: etat courant du repository
 - Date: 23/02/2026
-- Auteur: a completer
-- Groupe: a completer (3 ou 4)
+- Groupe: Kouamé BILÉ, Glody KUTUMBAKANA, Joseph HACCANDY
 
 ## 2. Objectifs
 - Verifier la conformite fonctionnelle des endpoints.

@@ -3,6 +3,6 @@ git init
 git branch -M main
 git add .
 git commit -m "first commit"
-gh repo create TP_TUC_Exam --private
-git remote add origin https://github.com/JXPM/TP_TUC_Exam.git
+gh repo create TP_TUC_Examen --private
+git remote add origin https://github.com/JXPM/TP_TUC_Examen.git
 git push --set-upstream origin main
