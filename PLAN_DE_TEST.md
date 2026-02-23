@@ -1,151 +1,133 @@
 # Plan de test - TP TUC Examen
 
-## 1. Informations generales
-- Projet: API FastAPI de gestion de dresseurs/pokemons/items
-- Version cible: etat courant du repository
-- Date: 23/02/2026
-- Groupe: Kouamé BILÉ, Glody KUTUMBAKANA, Joseph HACCANDY
+## 1. Ressources impliquees
+### 1.1 Ressources humaines
+- 1 developpeur/testeur principal (preparation, execution, correction)
+- 1 relecteur (validation finale des resultats)
 
-## 2. Objectifs
-- Verifier la conformite fonctionnelle des endpoints.
-- Verifier la logique de combat Pokemon demandee a l'examen.
-- Verifier la robustesse minimale (erreurs API externe, statuts HTTP).
-- Verifier la tenue en charge de base avec Locust.
-- Atteindre les attendus examen:
-  - Tests unitaires: >= 7 (groupe 4) / >= 5 (groupe 3)
-  - Tests avec mocks: >= 5 (groupe 4) / >= 3 (groupe 3)
-  - Coverage: >= 85% (groupe 4) / >= 80% (groupe 3)
+### 1.2 Ressources techniques
+- Poste Linux avec Python 3.10
+- API FastAPI (`uvicorn main:app --reload`)
+- Base SQLite (`sqlite.db`)
+- Outils: `pytest`, `coverage`, `locust`, `pylint`
+- Connexion internet (appel PokeAPI)
 
-## 3. Perimetre
-- Inclus:
-  - `GET /pokemons/battle`
-  - `GET /pokemons/random`
-  - Endpoints existants trainers/items/pokemons
-  - Fonctions metier de `app/utils/pokeapi.py`
-  - Fonctions CRUD de `app/actions.py`
-- Hors perimetre:
-  - Tests UI (pas d'interface front)
-  - Tests securite avances (pentest, auth, OWASP complet)
+### 1.3 Livrables de test
+- Rapport d'execution (`pytest -q`)
+- Rapport de couverture (`coverage report -m`)
+- Resultats de charge Locust
+- Ce plan de test (`PLAN_DE_TEST.md`)
 
-## 4. Environnement de test
-- OS: Linux
-- Python: 3.10.x
-- Framework API: FastAPI
-- Base de donnees: SQLite (`sqlite.db`)
-- Outils:
-  - `pytest`
-  - `coverage`
-  - `locust`
-  - `pylint`
+## 2. Besoins pour realiser les activites de test
+- Environnement Python installe avec dependances (`requirements.txt`)
+- API demarrable localement sur `http://127.0.0.1:8000`
+- Acces a PokeAPI (`https://pokeapi.co/api/v2`)
+- Jeu de donnees minimal en base (trainers/pokemons) pour les tests CRUD
+- Disponibilite d'un terminal pour lancer les campagnes (`pytest`, `locust`)
 
-## 5. Strategie de test
-- Niveau 1: Unitaires purs (fonctions de comparaison et regles combat)
-- Niveau 2: Unitaires avec mocks (PokeAPI/DB) pour isoler la logique
-- Niveau 3: Tests API (endpoints battle/random, statuts et structure payload)
-- Niveau 4: Performance de base avec Locust (charge legere)
-- Niveau 5: Qualite statique avec pylint
+## 3. Facteurs d'effort de test
+L'effort de test depend principalement du nombre d'endpoints a couvrir, de la dependance a une API externe (PokeAPI), de la necessite de maintenir des mocks fiables pour eviter les tests instables, et du temps d'investigation quand un defaut est lie a l'infrastructure (reseau, service externe, environnement local). La charge augmente aussi avec les exigences qualite (coverage minimum, note pylint minimale, tests de charge) qui imposent des executions supplementaires et des corrections iteratives.
 
-## 6. Donnees de test
-- IDs Pokemon valides: 1, 4, 7
-- Cas de stats fabriquees (mocks):
-  - Cas victoire premier pokemon
-  - Cas victoire second pokemon
-  - Cas egalite
-- Cas API externe indisponible: simulation via mock d'exception HTTP
+## 4. KPIs de suivi (3)
+- KPI-1: **Taux de tests passes** = (tests passes / tests executes) * 100
+  - Cible: 100% avant rendu
+- KPI-2: **Couverture de code** (coverage global)
+  - Cible: >= 85% (groupe 4) ou >= 80% (groupe 3)
+- KPI-3: **Taux d'erreur en charge** (Locust)
+  - Cible: < 5% d'erreurs sur le scenario nominal
 
-## 7. Matrice de tracabilite exigences -> tests
-| Exigence | Description | Tests associes |
-|---|---|---|
-| EX-01 | Combat entre 2 Pokemons par IDs | `test_battle_pokemon_first_wins`, `test_battle_pokemon_draw`, `test_pokemon_battle_endpoint` |
-| EX-02 | Comparaison stats 1 a 1 | `test_battle_compare_stats_first_wins`, `test_battle_compare_stats_second_wins`, `test_battle_compare_stats_draw` |
-| EX-03 | Endpoint 3 Pokemons aleatoires + stats (groupe 4) | `test_random_pokemons_endpoint` |
-| EX-04 | Ajout Pokemon a un trainer + nom issu PokeAPI | `test_add_trainer_pokemon_uses_pokeapi_name` |
-| EX-05 | Creation trainer + transactions DB | `test_create_trainer_creates_and_commits` |
-| EX-06 | Mapping des stats PokeAPI vers schema interne | `test_get_pokemon_stats_maps_api_stats` |
+## 5. Budget (couts potentiels)
+- Temps humain (principal cout): conception, execution, correction, re-tests
+- Infrastructure: machine de test dediee si charge plus lourde
+- Reseau/API externe: indisponibilite PokeAPI pouvant imposer des reprises de test
+- Outils CI/CD (si usage cloud prive): minutes de build/test facturables
 
-## 8. Cas de test detailles
-| ID | Type | Description | Pre-conditions | Etapes | Resultat attendu |
-|---|---|---|---|---|---|
-| TU-01 | Unitaire | `battle_compare_stats` retourne 1 | Stats mockees | Comparer 2 dicts (premier meilleur) | Retour `1` |
-| TU-02 | Unitaire | `battle_compare_stats` retourne -1 | Stats mockees | Comparer 2 dicts (second meilleur) | Retour `-1` |
-| TU-03 | Unitaire | `battle_compare_stats` retourne 0 | Stats mockees | Comparer 2 dicts (egalite) | Retour `0` |
-| TU-04 | Unitaire+mock | Mapping stats PokeAPI | Mock `get_pokemon_data` | Appeler `get_pokemon_stats(1)` | Dict normalise correct |
-| TU-05 | Unitaire+mock | Combat: victoire premier | Mock PokeAPI | Appeler `battle_pokemon(1,4)` | `winner` = premier, score coherent |
-| TU-06 | Unitaire+mock | Combat: egalite | Mock PokeAPI | Appeler `battle_pokemon(1,4)` | `winner` = `None`, score nul |
-| TA-01 | API+mock | Endpoint `/pokemons/battle` | Router charge | Appel route avec 2 IDs | JSON conforme + gagnant attendu |
-| TA-02 | API+mock | Endpoint `/pokemons/random` | Router charge | Appel route random | 3 elements, stats presentes |
-| TC-01 | CRUD+mock | Ajout pokemon trainer | Mock DB + models | Appeler `add_trainer_pokemon` | `add/commit/refresh` appeles |
-| TC-02 | CRUD+mock | Creation trainer | Mock DB + models | Appeler `create_trainer` | `add/commit/refresh` appeles |
+## 6. Cas de test
+Les cas detailles sont fournis en annexe dans `ANNEXE_CAS_DE_TEST.md`.
 
-## 9. Execution automatique
-- Lancer les tests:
+Extrait minimum (4 cas dont 1 negatif):
+- CT-01 (positif): Battle entre 2 IDs valides (`/pokemons/battle?first_api_id=1&second_api_id=4`) -> winner renseigne ou egalite valide
+- CT-02 (positif): Endpoint random (`/pokemons/random`) -> 3 pokemons + stats completes
+- CT-03 (positif): Creation trainer -> insertion reussie + id retourne
+- CT-04 (negatif): Battle avec ID invalide (`/pokemons/battle?first_api_id=-1&second_api_id=4`) -> erreur HTTP attendue (502 ou 4xx selon gestion)
+
+## 7. Evaluation des risques (sans matrice, comme demande)
+Le detail est fourni en annexe `ANNEXE_RISQUES.md` avec 4 risques:
+- R1: Indisponibilite/rate-limit PokeAPI
+- R2: Regressions fonctionnelles lors de modifications
+- R3: Instabilite des tests due aux dependances externes
+- R4: Resultats de performance non reproductibles selon machine
+
+## 8. Criteres d'entree et de sortie
+### 8.1 Critere d'entree
+- Code compile et API demarrable sans erreur
+- Dependances installees
+- Scenarios de test valides et cas de test prets
+- Acces PokeAPI ou mocks disponibles
+
+### 8.2 Critere de sortie
+- Tous les tests critiques passes
+- KPI-1 atteint (100% tests verts sur campagne finale)
+- KPI-2 atteint (coverage conforme au groupe)
+- KPI-3 respecte sur scenario de charge nominal
+- Defauts bloquants corriges ou explicitement acceptes
+
+## 9. Planification, priorisation et dependances
+Priorisation des cas:
+1. P1 - CT-01 Battle valide (coeur de l'examen)
+2. P1 - CT-04 Battle negatif (robustesse)
+3. P1 - CT-02 Random + stats
+4. P2 - CT-03 Creation trainer
+
+Dependances:
+- CT-01 depend de la disponibilite PokeAPI (ou mock)
+- CT-04 depend de la route battle operationnelle
+- CT-02 depend de la route random et de l'extraction des stats
+- CT-03 depend de la base SQLite accessible
+
+## 10. Annexes
+- `ANNEXE_CAS_DE_TEST.md` (cas de test detailles)
+- `ANNEXE_RISQUES.md` (registre des risques, 4 risques, sans matrice)
+
+## 11. Comment obtenir les pourcentages et indicateurs
+### 11.1 Pourcentage de tests passes
+Commande:
 ```bash
 pytest -q
 ```
-- Mesurer la couverture:
+Lecture:
+- Le resume final indique le nombre de tests passes/echoues.
+- Le taux de succes se calcule avec: `(passes / total) * 100`.
+## 11. Resultats de campagne de test (constates)
+### 11.1 Resultat tests unitaires
+- 10 tests executes
+- 10 tests passes
+- 0 test en echec
+- Taux de succes: 100%
+- Temps d'execution observe: 0.82s
+ 
+### 11.2 Pourcentage de couverture de code
+Commandes:
 ```bash
-test__venv/bin/coverage run -m pytest -q
-test__venv/bin/coverage report -m
+-test__venv/bin/coverage run -m pytest -q
+-test__venv/bin/coverage report -m
 ```
-- Verifier la qualite statique:
-```bash
-PYLINTHOME=/tmp/pylint_home test__venv/bin/pylint --rcfile=.pylintrc app main.py
-```
-
-## 10. Resultats constates (etat actuel)
-- Tests unitaires: 10/10 passes
-- Nombre de tests avec mocks: 7+
-- Coverage total observe: 91%
-- Pylint observe: 10.00/10 (avec `.pylintrc` du projet)
-
-## 11. Plan de charge (Locust)
-### 11.1 Objectif
-- Evaluer un comportement de base sous charge legere sur:
-  - `GET /pokemons/`
-  - `GET /pokemons/battle`
-  - `GET /pokemons/random`
-
-### 11.2 Configuration
-- Fichier: `locustfile.py`
-- Host par defaut: `http://127.0.0.1:8000`
-- Taches:
-  - liste pokemons: poids 3
-  - battle: poids 2
-  - random: poids 1
-
-### 11.3 Procedure
-1. Demarrer l'API:
-```bash
-uvicorn main:app --reload
-```
-2. Demarrer Locust UI:
-```bash
-locust -f locustfile.py
-```
-3. Ouvrir `http://127.0.0.1:8089`
-4. Lancer un scenario type: 20 users, spawn rate 5, duree 1 min
-
-### 11.4 Criteres d'acceptation charge (cible de base)
-- Taux d'erreur < 5%
-- p95 < 1000 ms sur endpoints principaux
-- Pas de crash applicatif
-
-## 12. Risques et mitigations
-| Risque | Impact | Mitigation |
-|---|---|---|
-| Indisponibilite ou rate-limit PokeAPI | Stats manquantes, erreurs battle/random | Mock en tests + gestion d'erreur HTTP cote API |
-| Ecart de perf selon machine locale | Resultats charge variables | Standardiser scenario (users, duree, host) |
-| Regressions lors de modifications futures | Defauts non detectes | Rejouer `pytest`, `coverage`, `pylint` en CI |
-
-## 13. Critere Go/No-Go
-- Go si:
-  - Tous les tests passent
-  - Coverage >= seuil groupe
-  - Pylint >= seuil groupe
-  - Endpoint combat et random verifies
-- No-Go sinon
-
-## 14. Annexes
-- Tests: `tests/test_pokeapi.py`, `tests/test_routes_and_actions.py`
-- Charge: `locustfile.py`, `locust.conf`
-- Documentation: `README.md`
+Lecture:
+- La ligne `TOTAL` donne le pourcentage global de couverture.
+- Chaque fichier a aussi son propre pourcentage.
+### 11.2 Resultat couverture de code
+| Fichier | Couverture |
+| app/__init__.py | 100% |
+| app/actions.py | 67% |
+| app/models.py | 100% |
+| app/routers/__init__.py | 100% |
+| app/routers/pokemons.py | 91% |
+| app/schemas.py | 100% |
+| app/sqlite.py | 100% |
+| app/utils/__init__.py | 100% |
+| app/utils/pokeapi.py | 93% |
+| app/utils/utils.py | 50% |
+| tests/conftest.py | 80% |
+| tests/test_pokeapi.py | 100% |
+| tests/test_routes_and_actions.py | 100% |
+ 
