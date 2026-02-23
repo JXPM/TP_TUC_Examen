@@ -1,0 +1,17 @@
+[MASTER]
+ignore=test__venv
+init-hook=import sys, pathlib; sys.path.insert(0, str(pathlib.Path().resolve()))
+
+[MESSAGES CONTROL]
+disable=
+    missing-module-docstring,
+    missing-class-docstring,
+    too-few-public-methods,
+    no-name-in-module,
+    invalid-name,
+    trailing-whitespace,
+    missing-final-newline,
+    consider-using-dict-items
+
+[FORMAT]
+max-line-length=100
