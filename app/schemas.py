@@ -1,5 +1,5 @@
 from datetime import date
-from typing import Dict, List, Optional, Union
+from typing import  List, Optional, Union
 from pydantic import BaseModel
 
 #
@@ -36,28 +36,6 @@ class Pokemon(PokemonBase):
 
     class Config:
         orm_mode = True
-
-
-class PokemonStats(BaseModel):
-    hp: int
-    attack: int
-    defense: int
-    special_attack: int
-    special_defense: int
-    speed: int
-
-
-class PokemonBattleResult(BaseModel):
-    first_pokemon_id: int
-    second_pokemon_id: int
-    winner: Union[str, None]
-    score: Dict[str, int]
-
-
-class PokemonWithStats(BaseModel):
-    api_id: int
-    name: str
-    stats: PokemonStats
 #
 #  TRAINER
 #

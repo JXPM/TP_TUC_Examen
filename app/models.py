@@ -21,7 +21,7 @@ class Pokemon(Base):
         Class representing a pokemon
         Parameters:
             api_id (int): id from the pokeapi
-            name (str): Populate with the pokeapi data
+            name (str): Populate with the pokeapi data 
     """
     __tablename__ = "pokemons"
 

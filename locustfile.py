@@ -1,17 +1,37 @@
-from locust import HttpUser, between, task
+"""Locust performance tests for the Pokemon API."""
+from locust import HttpUser, task, between
 
 
-class PokemonApiUser(HttpUser):
-    wait_time = between(1, 2)
+class PokemonAPIUser(HttpUser):
+    """Simulates a user interacting with the Pokemon API."""
+    wait_time = between(1, 3)
 
     @task(3)
     def list_pokemons(self):
+        """List all pokemons - most frequent action."""
         self.client.get("/pokemons/")
 
+    @task(3)
+    def list_trainers(self):
+        """List all trainers."""
+        self.client.get("/trainers/")
+
     @task(2)
-    def pokemon_battle(self):
-        self.client.get("/pokemons/battle", params={"first_api_id": 1, "second_api_id": 4})
+    def list_items(self):
+        """List all items."""
+        self.client.get("/items/")
+
+    @task(2)
+    def get_random_pokemons(self):
+        """Get 3 random pokemons with stats."""
+        self.client.get("/pokemons/random")
 
     @task(1)
-    def random_pokemons(self):
-        self.client.get("/pokemons/random")
+    def battle_pokemons(self):
+        """Battle two pokemons."""
+        self.client.get("/pokemons/battle/1/2")
+
+    @task(1)
+    def get_trainer_by_id(self):
+        """Get a specific trainer."""
+        self.client.get("/trainers/1")

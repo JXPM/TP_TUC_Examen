@@ -1,10 +1,11 @@
+"""Router for pokemon endpoints."""
 import random
 from typing import List
 from sqlalchemy.orm import Session
-from fastapi import APIRouter,  Depends
+from fastapi import APIRouter, Depends, HTTPException
 from app import actions, schemas
-from app.utils.pokeapi import battle_pokemon, get_pokemon_data, get_pokemon_stats
 from app.utils.utils import get_db
+from app.utils import pokeapi
 
 router = APIRouter()
 
@@ -12,33 +13,59 @@ router = APIRouter()
 @router.get("/", response_model=List[schemas.Pokemon])
 def get_pokemons(skip: int = 0, limit: int = 100, database: Session = Depends(get_db)):
     """
-        Return all pokemons
-        Default limit is 100
+    Return all pokemons.
+
+    Default limit is 100.
     """
     pokemons = actions.get_pokemons(database, skip=skip, limit=limit)
     return pokemons
 
 
-@router.get("/battle", response_model=schemas.PokemonBattleResult)
-def pokemon_battle(first_api_id: int, second_api_id: int):
+@router.get("/battle/{pokemon1_id}/{pokemon2_id}")
+def battle_pokemons(pokemon1_id: int, pokemon2_id: int, database: Session = Depends(get_db)):
     """
-        Do a battle between two pokemons using pokeapi ids
+    Make two pokemons battle using their database IDs.
+
+    Compares each stat one by one. The pokemon with the most superior stats wins.
     """
-    return battle_pokemon(first_api_id=first_api_id, second_api_id=second_api_id)
+    pokemon1 = actions.get_pokemon(database, pokemon_id=pokemon1_id)
+    if pokemon1 is None:
+        raise HTTPException(status_code=404, detail=f"Pokemon {pokemon1_id} not found")
+
+    pokemon2 = actions.get_pokemon(database, pokemon_id=pokemon2_id)
+    if pokemon2 is None:
+        raise HTTPException(status_code=404, detail=f"Pokemon {pokemon2_id} not found")
+
+    result = pokeapi.battle_pokemon(pokemon1.api_id, pokemon2.api_id)
+    return {
+        "pokemon1": {"id": pokemon1.id, "name": pokemon1.name, "api_id": pokemon1.api_id},
+        "pokemon2": {"id": pokemon2.id, "name": pokemon2.name, "api_id": pokemon2.api_id},
+        "result": result
+    }
 
 
-@router.get("/random", response_model=List[schemas.PokemonWithStats])
-def get_random_pokemons():
+@router.get("/random")
+def get_random_pokemons(database: Session = Depends(get_db)):
     """
-        Return 3 random pokemons with stats
+    Return 3 random pokemons with their stats from PokeAPI.
     """
-    random_ids = random.sample(range(1, 1026), 3)
-    random_pokemons = []
-    for pokemon_id in random_ids:
-        pokemon_data = get_pokemon_data(pokemon_id)
-        random_pokemons.append({
-            "api_id": pokemon_id,
-            "name": pokemon_data["name"],
-            "stats": get_pokemon_stats(pokemon_id),
+    all_pokemons = actions.get_pokemons(database)
+    if len(all_pokemons) < 3:
+        raise HTTPException(
+            status_code=404,
+            detail="Not enough pokemons in database (need at least 3)"
+        )
+
+    selected = random.sample(all_pokemons, 3)
+    result = []
+    for poke in selected:
+        stats = pokeapi.get_pokemon_stats(poke.api_id)
+        result.append({
+            "id": poke.id,
+            "name": poke.name,
+            "api_id": poke.api_id,
+            "custom_name": poke.custom_name,
+            "trainer_id": poke.trainer_id,
+            "stats": stats
         })
-    return random_pokemons
+    return result
